@@ -1,0 +1,27 @@
+<aura:component controller="BidAttachmentListController" implements="force:appHostable,flexipage:availableForAllPageTypes,forceCommunity:availableForAllPageTypes,force:hasRecordId">
+     <aura:attribute name="attachments" type="List" access="public" />
+    <aura:attribute name="isInit" type="Boolean" access="public" />
+     <aura:handler name="init" action="{!c.init}" value="{!this}"/>
+    
+    <!--  <lightning:card title = 'Opportunity Attachments'> -->
+    <aura:if isTrue="{!v.isInit}">
+    <ui:scrollerWrapper class="sWrapTest">
+    <lightning:layout multipleRows="true"> 
+        <aura:iteration items="{!v.attachments}" var="attachment">
+            <lightning:layoutItem size="6" largeDeviceSize="6" mediumDeviceSize="6" smallDeviceSize="12" class="slds-p-around_large"> 
+                        <lightning:fileCard fileId="{!attachment}"/>
+            </lightning:layoutItem> 
+            </aura:iteration> 
+        </lightning:layout>
+    </ui:scrollerWrapper>
+    </aura:if>
+     <!--   </lightning:card>  -->
+    <!--
+    <a href="/servlet/servlet.FileDownload?file=0693D000000H3bTQAS" target="_blank">TESTER</a>
+    
+    <a href="/s/?openFile=" target="_blank">TESTER2</a> 
+          <lightning:layoutItem class="slds-p-around_large imageReduce"> 
+          <lightning:fileCard fileId="0693D000000H3bTQAS"/>
+              </lightning:layoutItem>-->
+
+</aura:component>
