@@ -1,81 +1,54 @@
-public class OrderHelper {
+public class ContentDocumentLinkHelper {
     
-    public static void sendShippedEmail(list <Order__c> orders, Map <Id,Order__c> oldMap){ 
-        map <Id, set <Id>> manifestDocumentMap = new map <Id, set<Id>>(); 
-        map <Id, Id> documentToVersionMap = new map <Id, Id>();
-        set <Id> shippedOrderIds = new set <Id>();
-        set <Id> manifestContentIds = new set <Id>(); 
-        Map <Id, Id> orderToContactMap = new Map <Id, Id>(); 
-        for (Order__c order : [Select Status__c, Contact__c, Contact__r.Email FROM Order__c WHERE ID in :orders]){
-            if(order.Status__c == 'Shipped' && oldMap.get(order.Id).Status__c != 'Shipped' && order.Contact__r.Email != null){
-                shippedOrderIds.add(order.Id); 
-                orderToContactMap.put(order.Id, order.Contact__c);
-            }
+    public static void countManifest(list <ContentDocumentLink> docLinks) {   
+        list <Order__c> ordersToUpdate = new list <Order__c>(); 
+        set <Id> orderIds = new set <Id>();
+        set <Id> linkIds = new set <Id>(); 
+        map <Id, list <String>> linkToTitleMap = new map <Id, list<String>>(); 
+        
+        for (ContentDocumentLink link : docLinks){
+            linkIds.add(link.LinkedEntityId);
         }
         
-        system.debug('shippedOrderIds: ' + shippedOrderIds);
-        
-        if(shippedOrderIds.size() > 0){ 
+        if(linkIds.size() > 0){ 
             
-            for (ContentDocumentLink link : [Select ContentDocumentId, LinkedEntityId, ContentDocument.Title, ContentDocument.FileType
-                                             FROM ContentDocumentLink
-                                             WHERE LinkedEntityId IN :shippedOrderIds AND ContentDocument.FileType = 'CSV'
-                                             ]){
-                                                 String fileNameLower = link.ContentDocument.Title.toLowerCase(); 
-                                                 if(fileNameLower.contains('manifest')){
-                                                     if(manifestDocumentMap.containsKey(link.LinkedEntityId)){
-                                                         set <Id> documentIds = manifestDocumentMap.get(link.LinkedEntityId);
-                                                         documentIds.add(link.ContentDocumentId);
-                                                         manifestDocumentMap.put(link.LinkedEntityId, documentIds);
-                                                     } else{
-                                                         manifestDocumentMap.put(link.LinkedEntityId, new set<Id> {link.ContentDocumentId});   
-                                                     } 
-                                                     manifestContentIds.add(link.ContentDocumentId);
-                                                 }    
+            for (ContentDocumentLink link : [Select LinkedEntityId, ContentDocumentId, ContentDocument.Title
+                                             FROM ContentDocumentLink WHERE linkedEntityId in :linkIds]){
+                                                 if(linkToTitleMap.containsKey(link.LinkedEntityId)){
+                                                     list <String> fileNames = linkToTitleMap.get(link.LinkedEntityId);
+                                                     fileNames.add(link.ContentDocument.Title);
+                                                     linkToTitleMap.put(link.LinkedEntityId, fileNames);
+                                                 } else{
+                                                     linkToTitleMap.put(link.LinkedEntityId, new List<String> {link.ContentDocument.Title});   
+                                                 }
                                              }
+            system.debug('linkToTitleMap: ' + linkToTitleMap);
             
-            system.debug('manifestDocumentMap: ' + manifestDocumentMap);
-            
-            if(manifestDocumentMap.size() > 0){ 
-            
-            for (ContentVersion contVers : [SELECT Id, ContentDocumentId 
-                                            FROM ContentVersion 
-                                            WHERE ContentDocumentId in :manifestContentIds]){
-                                                documentToVersionMap.put(contVers.ContentDocumentId, contVers.Id);   
-                                            } 
-            
-            system.debug('documentToVersionMap: ' + documentToVersionMap);
-            
-            for (Id shippedOrder : shippedOrderIds){
-                list <String> versionIds = new list <String>();
-                for (Id docId : manifestDocumentMap.get(shippedOrder)){
-                    String versionId = documentToVersionMap.get(docId);
-                    versionIds.add(versionId);
-                }
-                system.debug('versionIds: ' + versionIds);
-                if(versionIds.size() > 0){
-                    Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-                    String[] toAddresses = new String[]{'lgsoderstrom@gmail.com'};
-                        mail.setToAddresses(toAddresses);
-                    mail.setReplyTo('lgsoderstrom@gmail.com');
-                    mail.setSenderDisplayName('CRM Support');
-                    mail.setBccSender(false);
-                    mail.setUseSignature(false);
-                   // mail.setPlainTextBody('Your Email has been sent');
-                    mail.setEntityAttachments(versionIds);
-                    mail.setTargetObjectId(orderToContactMap.get(shippedOrder));
-                    Id templateId = [Select ID FROM EMAILTEMPLATE WHERE NAME = 'Manifest Attachment Email'].Id; 
-                    mail.setTemplateId(templateId);
-                    system.debug('templateId: ' + templateId);
-                    system.debug('mail: ' + mail);   
-                    if(!test.isRunningTest()){ 
-                    Messaging.sendEmail(new Messaging.SingleEmailMessage[] { mail });  
-                    }
-                    
+            if(linkToTitleMap.size() > 0){
+                
+                for (Order__c order : [Select Id, Manifest_Count__c
+                                       FROM Order__c
+                                       WHERE Id in :linkIds]){
+                                           Integer manifestCount = 0;
+                                           for (String fileName : linkToTitleMap.get(order.Id)){
+                                               String fileNameLower = fileName.toLowerCase(); 
+                                               if(fileNameLower.contains('manifest')){
+                                                   manifestCount++;   
+                                               }
+                                           }
+                                           
+                                           system.debug('manifestCount: ' + manifestCount);
+                                           if(manifestCount > 0){ 
+                                               order.Manifest_Count__c = manifestCount; 
+                                               ordersToUpdate.add(order);  
+                                           }
+                                       }
+                
+                system.debug('ordersToUpdate: ' + ordersToUpdate);
+                if(ordersToUpdate.size() > 0){
+                    update ordersToUpdate; 
                 }
             }
         }
-        
-    }
     }
 }
