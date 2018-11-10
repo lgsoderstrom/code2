@@ -1,0 +1,33 @@
+@isTest
+public class OrderHelperTest {
+    
+    @isTest
+    public static void sendShippedEmailTest(){       
+        Account testAccount = new Account(Name='Test Account');
+        insert testAccount;
+        
+        Order__c testOrder = new Order__c(Name='Test', Status__c='Pending', 
+                                          Bill_To_Account__c=testAccount.Id,Manifest_Attached__c=true);
+        insert testOrder;
+        
+        ContentVersion testVersion = new ContentVersion(
+      					Title = 'Manifest Test',
+      					PathOnClient = 'Manifest.csv',
+      					VersionData = Blob.valueOf('Test Content')
+    );
+
+		insert testVersion;      
+        
+        list <ContentDocument> testDocs = [Select ID FROM ContentDocument];
+        system.debug('testDocs: ' + testDocs);
+        
+        ContentDocumentLink testLink = new ContentDocumentLink(linkedEntityId=testOrder.Id,
+                                                              ContentDocumentId=testDocs[0].Id,
+                                                               ShareType='V');
+        insert testLink; 
+        
+        testOrder.Status__c = 'Shipped';
+        update testOrder; 
+    }
+
+}
