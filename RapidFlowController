@@ -1,0 +1,65 @@
+public class AgentOrderCreationFlowController {
+    
+    @AuraEnabled
+    public static list <Inventory_Item__c> getCustomerKits(String recordId){
+        list <Inventory_Item__c> kits = [Select Name,Agent_Name__c,Contact__c,Item__c,
+                                         Quantity_In_Stock__c,Quantity_In_Transit__c,
+                                         Quantity_On_Order__c,Reorder_Point__c,Reorder_Quantity__c
+                                         FROM Inventory_Item__c 
+                                         WHERE Account__c = :recordId]; 
+        
+        return kits;   
+    }
+    
+    @AuraEnabled
+    public static Inventory_Item__c getSelectedKit(String kitId){
+        system.debug('kitId: ' + kitId);
+        list <Inventory_Item__c> kits = [Select Name,Agent_Name__c,Contact__c,Item__c,Account__c,
+                                         Quantity_In_Stock__c,Quantity_In_Transit__c,
+                                         Quantity_On_Order__c,Reorder_Point__c,Reorder_Quantity__c
+                                         FROM Inventory_Item__c 
+                                         WHERE Id = :kitId]; 
+        
+        return kits[0];   
+    }
+    
+    @AuraEnabled
+    public static list <String> getReorderQuantities(String defaultQuantity){ 
+        system.debug('Reorder_Quantity__c : ' + defaultQuantity);
+        list <String> quantities = new list <String>();
+        Schema.DescribeFieldResult fieldResult = Inventory_Item__c.Reorder_Quantity__c.getDescribe();
+        List<Schema.PicklistEntry> options = fieldResult.getPicklistValues();
+        for (Schema.PicklistEntry option: options) {
+            if(option.getValue() != defaultQuantity){   
+            quantities.add(option.getLabel());
+            }
+        }
+        return quantities;
+    }
+    
+     @AuraEnabled
+    public static Id createOrder(Inventory_Item__c kit,Decimal selectedQuantity){ 
+        system.debug('agent: ' + kit.Account__c);
+        Order__c newOrder = new Order__c(Auto_Purchase__c=true,Bill_To_Account__c=kit.Account__c,
+                                     Contact__c=kit.Contact__c,Customer_Kit__c=kit.Id,Due_Date__c=system.today(), 
+                                     Order_Date__c=system.today().addDays(3),Order_Type__c='Agent Order',Priority__c='High',
+                                     Ship_From__c='0014100001uO1vOAAS',Ship_To_Account__c=kit.Account__c,Status__c='Pending'
+            
+                                     );
+        system.debug('newOrder: ' + newOrder);
+        insert newOrder; 
+        
+        system.debug('newOrder: ' + newOrder);
+        
+       system.debug('selectedQuanity: ' + selectedQuantity);
+        Order_Item__c newOrderItem = new Order_Item__c(Item_Status__c='On Order',Inventory_Item__c=kit.Id,  
+                                                      Item__c=kit.Item__c,Order__c=newOrder.Id,quantity__c=selectedQuantity);
+        
+        insert newOrderItem; 
+        
+        system.debug('newOrderItem: ' + newOrderItem);
+        
+        return newOrder.Id; 
+    }
+
+}
