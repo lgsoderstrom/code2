@@ -43,22 +43,17 @@ public class AgentOrderCreationFlowController {
         Order__c newOrder = new Order__c(Auto_Purchase__c=true,Bill_To_Account__c=kit.Account__c,
                                      Contact__c=kit.Contact__c,Customer_Kit__c=kit.Id,Due_Date__c=system.today(), 
                                      Order_Date__c=system.today().addDays(3),Order_Type__c='Agent Order',Priority__c='High',
-                                     Ship_From__c='0014100001uO1vOAAS',Ship_To_Account__c=kit.Account__c,Status__c='Pending'
+                                     Ship_From__c=kit.Account__c,Ship_To_Account__c=kit.Account__c,Status__c='Pending'
             
                                      );
-        system.debug('newOrder: ' + newOrder);
+
         insert newOrder; 
-        
         system.debug('newOrder: ' + newOrder);
-        
-       system.debug('selectedQuanity: ' + selectedQuantity);
+
         Order_Item__c newOrderItem = new Order_Item__c(Item_Status__c='On Order',Inventory_Item__c=kit.Id,  
                                                       Item__c=kit.Item__c,Order__c=newOrder.Id,quantity__c=selectedQuantity);
         
         insert newOrderItem; 
-        
-        system.debug('newOrderItem: ' + newOrderItem);
-        
         return newOrder.Id; 
     }
 
