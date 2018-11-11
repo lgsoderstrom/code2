@@ -90,7 +90,7 @@
     
     getKit: function(component, event, helper) { 
         var action = component.get("c.getSelectedKit");
-        action.setParam('kitId', 'a2441000002V6FDAA0');
+        action.setParam('kitId', component.get('v.selectedKit'));
         console.log(action); 
         action.setCallback(this, function(response){
             var state = response.getState();
@@ -131,17 +131,9 @@
             }  
         });
         $A.enqueueAction(action);  
-    },
-    
-    redirectNewRecord: function(component, event, helper) {  
-        console.log('in');
-        var navEvt = $A.get("e.force:navigateToSObject");
-        navEvt.setParams({
-            "recordId": "5004100000BgltVAAR" 
-        }); 
-        navEvt.fire();
     }
 })
+
 
 
 
