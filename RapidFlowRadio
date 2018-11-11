@@ -1,0 +1,176 @@
+<aura:component controller='AgentOrderCreationFlowController' implements="force:lightningQuickAction,flexipage:availableForRecordHome,force:hasRecordId" access="global" >
+	
+ <aura:attribute name="currentFormStep" type="Integer" default="1" access="global"/>
+    <aura:attribute name="selectedQuantity" type="Integer" default="1" access="global"/>
+   <aura:attribute name="kitOptions" type="List"/>  
+    <aura:attribute name="reorderQuantities" type="List"/> 
+    <aura:attribute name="selectedKitId" type="String" access="global"/>
+    <aura:attribute name="selectedKit" type="Inventory_Item__c" access="global"/>
+<aura:handler name="init" action="{!c.init}" value="{!this}"/>
+
+    <aura:if isTrue="{!v.currentFormStep == 1}"> 
+    <lightning:layoutItem padding="around-small"> 
+
+    <lightning:radioGroup name="kitOptions"
+                          label="Select Your Kit"
+                          options="{!v.kitOptions}"
+                          value="{!v.selectedKit}"
+                          type="radio"/>
+
+   
+
+
+        <lightning:button class="slds-m-top_medium slds-align--absolute-center" variant="brand" disabled="{!empty(v.selectedKit)}" onclick="{!c.getKit}" label="Next" />
+        </lightning:layoutItem>
+
+    </aura:if>
+    
+     <aura:if isTrue="{!v.currentFormStep == 2}">
+         <lightning:layout multipleRows="true"> 
+             <lightning:layoutItem size="12" class="weightedText slds-text-heading--small"> 
+        Customer Kit Details
+             </lightning:layoutItem> 
+              <lightning:layoutItem size="6">
+                  <span class="weightedText">Agent: </span>{!v.selectedKit.Agent_Name__c} 
+         </lightning:layoutItem>             
+         <lightning:layoutItem size="6">
+         <span class="weightedText">Quantity in Stock: </span> {!v.selectedKit.Quantity_In_Stock__c}
+         </lightning:layoutItem>
+         <lightning:layoutItem size="6">
+         <span class="weightedText">Quantity on Order: </span> {!v.selectedKit.Quantity_On_Order__c}
+         </lightning:layoutItem>
+         <lightning:layoutItem size="6">
+         <span class="weightedText">Quantity in Transit: </span> {!v.selectedKit.Quantity_In_Transit__c}
+         </lightning:layoutItem>
+             
+              <lightning:layoutItem class="slds-m-top_x-small" size="12">
+                        <lightning:select aura:id="orderQuantity" label="Order Quantity" name="orderQuantity" value="{!v.selectedQuantity}" required="true" messageWhenValueMissing="You must select a quantity">
+                            <option value="{!v.selectedKit.Reorder_Quantity__c}">{!v.selectedKit.Reorder_Quantity__c}</option>
+                            <aura:iteration items="{!v.reorderQuantities}" var="quantity">
+                                <option value="{!quantity}">{!quantity}</option>
+                            </aura:iteration>   
+                               </lightning:select> 
+                    </lightning:layoutItem>
+         
+        
+    </lightning:layout>
+         <lightning:button class="slds-m-top_medium slds-align--absolute-center" variant="brand"  onclick="{!c.createOrderRecords}" label="Create Order"/>
+         </aura:if>
+
+</aura:component>
+
+
+({
+    init: function(component, event, helper) {
+        console.log('22: ' + component.get('v.recordId'));
+        var action = component.get("c.getCustomerKits");
+        action.setParam('recordId', component.get('v.recordId'));
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {
+                var kits = response.getReturnValue();
+                console.log("kits" + kits);
+                var option = [];
+                for (var kit of kits) {
+                option.push({
+      				label: kit.Name,
+                      value: kit.Id
+    });
+                }
+       
+                 component.set("v.kitOptions",option);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+    },
+    
+    getKit: function(component, event, helper) { 
+        var action = component.get("c.getSelectedKit");
+        action.setParam('kitId', 'a2441000002V6FDAA0');
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {
+                var kit = response.getReturnValue();
+                console.log('default1: ' + kit.Reorder_Quantity__c);
+                //option.push({'label','1'});  
+                //option.push('label','2');
+                //option.push('label','3');
+                component.set("v.selectedKit",kit);
+                helper.getQuantities(component,event,helper,kit); 
+                console.log('11');
+            } 
+            else { 
+                console.log("Failed with state: " + response.getReturnValue());
+            }  
+        });
+        $A.enqueueAction(action);  
+        
+    },
+    
+    createOrderRecords: function(component, event, helper) { 
+        var action = component.get("c.createOrder");
+        action.setParams({'kit':component.get('v.selectedKit'),'selectedQuantity':component.get('v.selectedQuantity')});
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {
+                console.log('id: ' + response.getReturnValue());
+                var navEvt = $A.get("e.force:navigateToSObject");
+                navEvt.setParams({
+                    "recordId": response.getReturnValue() 
+                }); 
+                navEvt.fire();
+            } 
+            else { 
+                console.log("Failed with state: " + response.getReturnValue());
+            }  
+        });
+        $A.enqueueAction(action);  
+    },
+    
+    redirectNewRecord: function(component, event, helper) {  
+        console.log('in');
+        var navEvt = $A.get("e.force:navigateToSObject");
+        navEvt.setParams({
+            "recordId": "5004100000BgltVAAR" 
+        }); 
+        navEvt.fire();
+    }
+})
+
+
+
+({
+ getQuantities: function(component,event,helper,kit) {
+        console.log('13');
+     console.log('14: ' + kit.Reorder_Quantity__c);      
+        var action = component.get("c.getReorderQuantities");
+        action.setParam('defaultQuantity',kit.Reorder_Quantity__c);
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {
+                component.set("v.reorderQuantities",response.getReturnValue());
+                component.set('v.currentFormStep',2);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+        console.log('14');
+    },
+})
+
+.THIS .uiButton--brand {
+        background-color : white !important;
+}
+
+.THIS .weightedText {
+        font-weight: 600;
+}
