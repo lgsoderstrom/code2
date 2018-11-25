@@ -1,0 +1,97 @@
+<aura:component controller="PrintLabelsController" implements="flexipage:availableForRecordHome,force:hasRecordId" access="global" >
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="boxes" type="Integer" access="global"/> 
+    
+    <aura:attribute name="order" type="Order__c" access="global"/>
+	<aura:handler name="init" action="{!c.init}" value="{!this}"/>
+    
+  <!--  <iframe src="{!'/apex/PrintOrder'}" width="100%" height="500px;" frameBorder="0"/> -->
+    
+    <lightning:card iconName="utility:print" title="Print Shipping Labels">
+        <lightning:layoutItem class='slds-m-left_medium slds-m-top_xxx-small'> 
+            Order Number:  {!v.order.Name}
+        </lightning:layoutItem>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-top_xxx-small'> 
+			Agent:  {!v.order.Ship_To_Account__r.Name} 
+            </lightning:layoutItem>
+            <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xxx-small'> 
+                Number of Boxes:
+			<lightning:input variant="label-hidden" max="50" min="1" type="number" name="input2" value="{!v.boxes}"/>
+                </lightning:layoutItem>
+        <lightning:layout horizontalAlign="center" class='slds-m-top_medium'> 
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:button variant='brand' label="Print Labels" disabled="{!empty(v.boxes)}" title="Neutral action" onclick="{!c.printLabels}"/>
+            </lightning:layout>
+
+    </lightning:card>
+</aura:component>
+
+
+({
+    init: function(component, event, helper) {
+        console.log('22: ' + component.get('v.recordId'));
+        var action = component.get("c.getOrder");
+        action.setParam('orderId', component.get('v.recordId'));
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {      
+                component.set("v.order",response.getReturnValue());
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+    },
+    
+    printLabels: function(component, event, helper) {
+        console.log('22: ' + component.get('v.recordId'));
+        var action = component.get("c.commitNumber");
+        action.setParams({'order':component.get('v.order'),'numberOfBoxes':component.get('v.boxes')});
+        console.log(action);  
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {      
+            var vfUrl = 'https://rapid--partial--c.cs21.visual.force.com/apex/PrintLabels2?Id=' + component.get('v.recordId');
+        var urlEvent = $A.get("e.force:navigateToURL");
+        urlEvent.setParams({
+          "url": vfUrl
+        });
+        urlEvent.fire();
+              //  $A.get('e.force:refreshView').fire();
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+    }
+})
+
+.THIS .slds-text-heading_small{
+    font-weight: 900 !important;
+}
+
+
+public class PrintLabelsController {
+    
+    @AuraEnabled
+    public static Order__c getOrder(Id orderId){
+        system.debug('orderId');
+        
+        list <Order__c> order = [Select Name, Ship_To_Account__r.Name,Box_Count__c
+                                FROM Order__c
+                                WHERE Id = :orderId]; 
+        
+        return order[0];
+    }
+    
+    @AuraEnabled
+    public static void commitNumber(Decimal numberOfBoxes,Order__c order){
+        
+        order.Box_Count__c=numberOfBoxes;
+        update order; 
+    }
+
+}
