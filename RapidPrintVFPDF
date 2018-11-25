@@ -1,0 +1,146 @@
+<apex:page standardController="Order__c" extensions="PrintLabelsController2" cache="false" applyBodyTag="false" renderAs="pdf" sidebar="false"  >
+    <head >
+        <style type="text/css" media="print">
+            
+            @page {
+            
+            margin-top: 0px;
+            margin-bottom: 80px;    
+            
+            @bottom-center {
+            content: element(footer);
+            }
+            }
+            
+            div.footer {
+            display: block;
+            padding: 5px;
+            position: running(footer);
+            } 
+            
+            .ct {
+            text-align:center;
+            }
+            
+            .dataTable td {
+            border-top: solid 1px black;
+            border-right: solid 1px black;
+            font-size: 12px;
+            padding: 5px 2px 5px 5px;
+            text-align: center;
+            }
+            
+        </style>
+    </head>
+    
+    <apex:variable value="{!0}" var="count"/>
+    <apex:repeat value="{!boxes}" var="box">
+        <apex:variable value="{!count+1}" var="count"/>
+            <div style="{!IF(boxes.size == count, '','page-break-after:always;')}"> 
+
+      <!--  <div style="page-break-after:always;">  -->
+            
+            <div style="width: 700px; padding-top: 10px;">
+                <table style="width:100%;" >  
+                    <tr align = "Left">
+                        <td >
+                            <apex:outputText value="Order Number: {!theOrder.Name}" style="padding-bottom: 4px;" />
+                            <br/>
+                            <apex:outputText value="Agent Name: {!theOrder.Bill_To_Account__r.Name}" style="padding-bottom: 4px;" />
+                            <br/>
+                            <apex:outputText value="Item: {!theOrder.Kit_Created_By_Description__c}" style="padding-bottom: 4px;" />
+                            <br/>
+                            <apex:outputText value="Box {!box} of {!theOrder.Box_Count__c}" style="padding-bottom: 4px;" />
+                            <br/> 
+                            <div style="padding-top: 4px;"> 
+                            <apex:image value="{!imageURL}" style="width: 200px; height: 50px;" />
+                        </div>
+                        </td>
+                        <td style="text-align: right; " >
+                            
+                        </td> 
+                    </tr>   
+                    
+                </table> 
+            </div>
+            <br/><br/>
+        </div>
+    </apex:repeat>
+</apex:page>
+
+
+
+
+Class
+
+/*
+    Developer:  Jim Hyland <jon@shippconsulting.com>
+    
+    Description:
+       Controller for the PrintOrder page
+       Test code in PrintOrderControllerTest class.
+*/
+
+public class PrintLabelsController2 {
+    
+    /* Variables */
+    
+    public String imageUrl { get; private set; }
+    public Order__c theOrder { get; private set; }
+    public List<Integer> boxes { get; set; }  
+    
+    /* Constructor */
+    
+    public PrintLabelsController2(ApexPages.StandardController controller) {
+        theOrder = [select name, Kit_Created_By_Description__c,  Ship_to_Account__r.Name, Box_Count__c, Ship_to_Account__r.BillingStreet, Ship_to_Account__r.BillingCity, 
+            Ship_to_Account__r.BillingState, Total_Quantity__c, Bill_To_Account__r.Agent_Number__c, Ship_to_Account__r.BillingPostalCode, Bill_to_Account__r.name, Bill_to_Account__r.BillingStreet, 
+            Bill_to_Account__r.BillingCity, Bill_to_Account__r.BillingState, Bill_to_Account__r.BillingPostalCode, order_date__c, due_date__c,
+            Total_Amount__c from Order__c where Id = :controller.getId()];
+        imageUrl='https://www.barcodesinc.com/generator/image.php?code=' + theOrder.name + '&style=197&type=C128B&width=200&height=50&xres=1&font=3';
+        boxes = getBoxes(controller.getId());
+    }
+    
+    public Integer[] getBoxes(Id orderId) {
+        system.debug('orderId: ' + orderId);
+       list <Order__c> orders = [Select Box_Count__c 
+                                  FROM Order__c 
+                                  WHERE Id = :orderId];  
+        list <Integer> boxes = new list <Integer>(); 
+        
+        system.debug('count: ' + orders[0].Box_Count__c);
+        
+        for(integer i=1;i<=orders[0].Box_Count__c;i++)
+        {
+            boxes.add(i);
+        }
+        system.debug('boxes: ' + boxes);
+        return boxes;
+    }
+
+}
+
+
+TEST
+
+@isTest
+public class PrintLabelsController2Test {
+
+    /* Test Methods */
+    
+    @isTest
+    private static void testPrintLabelsController2() {
+        
+        // set up test data
+        Account account = TestUtil.createAccount();
+        Contact contact = TestUtil.createContact(account.Id);
+        Product2 product = TestUtil.createProduct();
+        Order__c order1 = new Order__c(ship_to_account__c = account.Id, bill_to_account__c = account.Id);
+        insert order1;
+        
+        // run tests
+        ApexPages.Standardcontroller sc = new ApexPages.StandardController(order1);
+        PrintLabelsController2 con = new PrintLabelsController2(sc);
+    }
+}
+
+
