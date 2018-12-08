@@ -1,0 +1,41 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,force:lightningQuickAction" access="global" >
+	<aura:attribute name="startDate" type="Date"/>
+    <aura:attribute name="endDate" type="Date"/>
+    <aura:attribute name="legacyTransaction" type="Integer" default="4"/>
+    <aura:attribute name="coreTransactions" type="Integer" default="6"/>
+    <aura:attribute name="minEndDate" type="String"/>
+   
+    <lightning:card iconName="utility:change_record_type" title="Get Transactions">
+        <lightning:layoutItem class='slds-m-left_medium slds-m-top_xxx-small'> 
+            <lightning:input type="date" name="input1" label="Start Date" value="{!v.startDate}" onchange="{!c.setMinDate}" />
+        </lightning:layoutItem>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-top_xxx-small'> 
+			<lightning:input type="date" name="input2" label="End Date" value="{!v.endDate}" min="{!v.minEndDate}" disabled="{!empty(v.startDate)}"/>  
+            </lightning:layoutItem>
+                <lightning:layout horizontalAlign="center" class='slds-m-top_medium'> 
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:button variant='brand' label="Get Card Load Transactions" disabled="{!or(empty(v.startDate),empty(v.endDate))}" title="Neutral action" onclick="{!c.printLabels}"/>
+            </lightning:layout>
+            <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_small'> 
+                Legacy Card Load Transactions: {!v.legacyTransaction}
+                </lightning:layoutItem>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                Core Load Transactions: {!v.coreTransactions}
+                </lightning:layoutItem>
+
+        <lightning:layout horizontalAlign="center" class='slds-m-top_medium'> 
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:button variant='brand' label="Create Inventory Transactions" disabled="{!or(empty(v.startDate),empty(v.endDate))}" title="Neutral action" onclick="{!c.printLabels}"/>
+            </lightning:layout>
+
+    </lightning:card>
+</aura:component>
+
+
+({
+	setMinDate : function(component, event, helper) {
+        console.log('3');
+        console.log(component.get("v.startDate"));
+        component.set("v.minEndDate",component.get("v.startDate"));
+	}
+})
