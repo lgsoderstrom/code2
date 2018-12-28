@@ -1,0 +1,216 @@
+<aura:component implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global" controller="getCardInfoController">
+	
+	<aura:attribute name="cardNumber" type="Integer"/>
+    <aura:attribute name="holderName" type="Integer"/>
+    <aura:attribute name="legacyTransaction" type="Integer" default="4"/>
+    <aura:attribute name="coreTransactions" type="Integer" default="6"/>
+    <aura:attribute name="flowStep" type="integer" default="1"/>
+    <aura:attribute name="cardWrapper" type="CardFlowWrapper"/>
+    <aura:attribute name="spinner" type="Boolean" default="false"/>
+    
+   
+   
+    
+    <lightning:card iconName="utility:change_record_type" title="Get Card Info">
+        <aura:if isTrue="{!v.flowStep == 1}">
+             <aura:if isTrue="{!v.spinner}">
+    <lightning:spinner alternativeText="Loading" size="medium"/>
+    </aura:if>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-top_xxx-small'> 
+            <lightning:input type="integer" name="input1" label="Card Number" value="{!v.cardNumber}" disabled="{!!empty(v.holderName)}" />
+        </lightning:layoutItem>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-top_xxx-small'> 
+			<lightning:input type="integer" name="input2" label="Card Holder Name" value="{!v.holderName}" disabled="{!!empty(v.cardNumber)}"/>  
+            </lightning:layoutItem>
+                <lightning:layout horizontalAlign="center" class='slds-m-top_medium'> 
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:button variant='brand' label="Get Card Info" disabled="{!and(empty(v.cardNumber),empty(v.holderName))}" title="Neutral action" onclick="{!c.doCallout}"/>
+            </lightning:layout>
+        </aura:if>
+        
+        <aura:if isTrue="{!v.flowStep == 2}">
+            <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_small'> 
+                Legacy Card Load Transactions: {!v.legacyTransaction}
+                </lightning:layoutItem>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                First Name: {!v.cardWrapper.cardFirstName}
+                </lightning:layoutItem>    
+        <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                Last Name: {!v.cardWrapper.cardLastName}
+                </lightning:layoutItem>
+            <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                Date of Birth: {!v.cardWrapper.cardDOB}
+                </lightning:layoutItem>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                SSN (Last Four Digits): {!v.cardWrapper.cardSSN}
+                </lightning:layoutItem>
+            <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                Email: {!v.cardWrapper.cardEmail}
+                </lightning:layoutItem>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                Address: {!v.cardWrapper.cardAddress}
+                </lightning:layoutItem>
+            <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                (Agent Name) Loading Facility: {!v.cardWrapper.cardAgentName}
+                </lightning:layoutItem>
+        <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                Balance: {!v.cardWrapper.cardBalance}
+                </lightning:layoutItem>
+            <lightning:layoutItem class='slds-m-left_medium slds-m-right_medium slds-m-top_xx-small'> 
+                Card Status: {!v.cardWrapper.cardStatus}
+                </lightning:layoutItem>
+
+        <lightning:layout horizontalAlign="center" class='slds-m-top_medium'> 
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:button variant='brand' label="Create Inventory Transactions" disabled="{!or(empty(v.startDate),empty(v.endDate))}" title="Neutral action" onclick="{!c.printLabels}"/>
+            </lightning:layout>
+        </aura:if>
+
+    </lightning:card>
+
+</aura:component>
+
+
+({
+	doCallout : function(component, event, helper) {
+        component.set("v.spinner", true);
+          var action = component.get("c.getCardInfo");
+        action.setParam('cardNumber', component.get('v.cardNumber'));
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {
+                var wrapper = response.getReturnValue();
+                component.set("v.cardWrapper",wrapper);
+                component.set("v.spinner", false);
+                component.set("v.flowStep", 2);
+            } 
+            else { 
+                console.log("Failed with state: " + response.getReturnValue());
+            }  
+        });
+        $A.enqueueAction(action); 	
+	}
+})
+
+
+public class CardFlowWrapper {
+    
+    @auraEnabled
+    public String cardFirstName{get; set;}
+    @auraEnabled
+    public String cardLastName{get; set;}
+    @auraEnabled
+    public String cardDOB{get; set;}
+    @auraEnabled
+    public String cardSSN{get; set;}
+    @auraEnabled
+    public String cardEmail{get; set;}
+    @auraEnabled
+    public String cardAddress{get; set;}
+    @auraEnabled
+    public String cardAgentName{get; set;}
+    @auraEnabled
+    public String cardBalance{get; set;}
+    @auraEnabled
+    public String cardStatus{get; set;}
+
+}
+
+public class getCardInfoController {
+    
+    @auraEnabled
+    public static CardFlowWrapper getCardInfo(String cardNumber){ 
+        String jsonResponse;
+        HttpRequest objReq = new HttpRequest();
+        HttpResponse objResp = new HttpResponse(); 
+        Http objHttp = new Http();
+        objReq.setEndpoint('https://rapidefund.com/MPGateway/IAG');
+        objReq.setBody('<!DOCTYPE pip SYSTEM "https://www.rapidefund.com/MPGateway/dtd/mycropod_rq_1_0.dtd">'
+                       + '<pip>' 
+                       + '<client_id>GFGD84KJBAPDMZKSTDG36612107DHFHE3PRFDSEB</client_id>' 
+                       + '<get_card>' 
+                       + '<card_number>FIqIevLcj4H/FMFlyJd6UhRRZDx+o1QT0c5C/3z25UjGq4WIoXkTX3A9kcwGZIFC</card_number>' 
+                       + '</get_card>' 
+                       + '</pip>');
+        
+        
+        objReq.setMethod('POST');
+        objReq.setHeader('Content-Type', 'text/xml');   
+        objReq.setTimeout(120000);           
+        objResp = objHttp.send(objReq);  
+        String resBody = objResp.getBody();//.replaceAll('Currency','CurrencyData'); 
+        Dom.Document doc = objResp.getBodyDocument(); 
+        Dom.XMLNode rss = doc.getRootElement();
+        CardFlowWrapper wrapper = new CardFlowWrapper();
+        for(Dom.XMLNode child : rss.getChildren()){
+            for(Dom.XMLNode channel : child.getChildren()){
+                
+                for(Dom.XMLNode newChannel : channel.getChildren()){
+                    system.debug('3: ' + newChannel.getName());
+                    system.debug('4: ' + newChannel.getText());
+                    if(newChannel.getName() == 'first_name'){
+                        system.debug('in!!');
+                        wrapper.cardFirstName = newChannel.getText(); 
+                    }
+                    if(newChannel.getName() == 'last_name'){
+                        system.debug('in!!');
+                        wrapper.cardLastName = newChannel.getText(); 
+                    }
+                    if(newChannel.getName() == 'balance'){
+                        system.debug('in!!');
+                        wrapper.cardBalance = newChannel.getText(); 
+                    }
+                    if(newChannel.getName() == 'street_address_1'){
+                        system.debug('in!!');
+                        wrapper.cardAddress = newChannel.getText(); 
+                    }
+                    if(newChannel.getName() == 'city'){
+                        system.debug('in!!');
+                        wrapper.cardAddress += newChannel.getText(); 
+                    }
+                    if(newChannel.getName() == 'state'){
+                        system.debug('in!!');
+                        wrapper.cardAddress += newChannel.getText(); 
+                    }
+                    if(newChannel.getName() == 'country'){
+                        system.debug('in!!');
+                        wrapper.cardAddress += newChannel.getText(); 
+                    }
+                      if(newChannel.getName() == 'zip'){
+                        system.debug('in!!');
+                        wrapper.cardAddress += newChannel.getText(); 
+                    }
+                      if(newChannel.getName() == 'primary_ssn'){
+                        system.debug('in!!');
+                        wrapper.cardSSN += newChannel.getText(); 
+                    }
+                      if(newChannel.getName() == 'primary_birthdate'){
+                        system.debug('in!!');
+                        wrapper.cardDOB += newChannel.getText(); 
+                    }
+                      if(newChannel.getName() == 'email_address'){
+                        system.debug('in!!');
+                        wrapper.cardEmail += newChannel.getText(); 
+                    }
+                     if(newChannel.getName() == 'status'){
+                        system.debug('in!!');
+                        wrapper.cardStatus += newChannel.getText(); 
+                    }
+                }
+            }
+        }
+        
+       /* wrapper.cardFirstName = 'Test Name';
+        wrapper.cardDOB = '1/1/1900';
+        wrapper.cardSSN = '111-111-1111';
+        wrapper.cardEmail = 'test@test.com';
+        wrapper.cardAddress = '1111 Test Street, 11111';
+        wrapper.cardAgentName = 'Test Agent Name';
+      //  wrapper.cardBalance = '$1,000';
+        wrapper.cardStatus = 'Active'; */
+        return wrapper; 
+        
+    }
+    
+}
