@@ -96,12 +96,36 @@
 
 public class CardFlowWrapper {
     
+	@auraEnabled
+    public String enteredCardNumber{get; set;}
+    @auraEnabled
+    public String programId{get; set;}
+    @auraEnabled
+    public String agentNumber{get; set;}
+    @auraEnabled
+    public String errorMessage{get; set;}
+    @auraEnabled
+    public String cardAccountNumber{get; set;}
+    @auraEnabled
+    public String cardAgentAccountNumber{get; set;}
+    @auraEnabled
+    public String cardPartnerName{get; set;}
+    @auraEnabled
+    public Date accountActivationDate{get; set;}
+    @auraEnabled
+    public String cardId{get; set;}
+    @auraEnabled
+    public String cardLastFourDigits{get; set;}
+    @auraEnabled
+    public Date cardExpiringDate{get; set;}
+    @auraEnabled
+    public String customerId{get; set;}
     @auraEnabled
     public String cardFirstName{get; set;}
     @auraEnabled
     public String cardLastName{get; set;}
     @auraEnabled
-    public String cardDOB{get; set;}
+    public Date cardDOB{get; set;}
     @auraEnabled
     public String cardSSN{get; set;}
     @auraEnabled
@@ -111,16 +135,35 @@ public class CardFlowWrapper {
     @auraEnabled
     public String cardAgentName{get; set;}
     @auraEnabled
-    public String cardBalance{get; set;}
+    public String cardAvailableBalance{get; set;}
+    @auraEnabled
+    public String cardCurrentBalance{get; set;}
     @auraEnabled
     public String cardStatus{get; set;}
+     @auraEnabled
+    public String accountStatus{get; set;}
+    @auraEnabled
+    public String address1{get; set;}
+    @auraEnabled
+    public String address2{get; set;}
+    @auraEnabled
+    public String city{get; set;}
+    @auraEnabled
+    public String state{get; set;}
+    @auraEnabled
+    public String country{get; set;}
+    @auraEnabled
+    public String zip{get; set;}
 
 }
 
 public class getCardInfoController {
     
     @auraEnabled
-    public static CardFlowWrapper getCardInfo(String cardNumber){ 
+    public static CardFlowWrapper getCardInfo(String cardNumber, String holderName){ 
+        system.debug('cardNumber: ' + cardNumber);
+        system.debug('holderName: ' + holderName);
+        //FIqIevLcj4H/FMFlyJd6UhRRZDx+o1QT0c5C/3z25UjGq4WIoXkTX3A9kcwGZIFC
         String jsonResponse;
         HttpRequest objReq = new HttpRequest();
         HttpResponse objResp = new HttpResponse(); 
@@ -130,7 +173,7 @@ public class getCardInfoController {
                        + '<pip>' 
                        + '<client_id>GFGD84KJBAPDMZKSTDG36612107DHFHE3PRFDSEB</client_id>' 
                        + '<get_card>' 
-                       + '<card_number>FIqIevLcj4H/FMFlyJd6UhRRZDx+o1QT0c5C/3z25UjGq4WIoXkTX3A9kcwGZIFC</card_number>' 
+                       + '<card_number>' + cardNumber + '</card_number>' 
                        + '</get_card>' 
                        + '</pip>');
         
@@ -143,6 +186,9 @@ public class getCardInfoController {
         Dom.Document doc = objResp.getBodyDocument(); 
         Dom.XMLNode rss = doc.getRootElement();
         CardFlowWrapper wrapper = new CardFlowWrapper();
+        if(cardNumber.length() > 4){
+            wrapper.enteredCardNumber = cardNumber.right(4);  
+        }
         for(Dom.XMLNode child : rss.getChildren()){
             for(Dom.XMLNode channel : child.getChildren()){
                 
@@ -159,58 +205,191 @@ public class getCardInfoController {
                     }
                     if(newChannel.getName() == 'balance'){
                         system.debug('in!!');
-                        wrapper.cardBalance = newChannel.getText(); 
+                        wrapper.cardCurrentBalance = newChannel.getText(); 
                     }
                     if(newChannel.getName() == 'street_address_1'){
                         system.debug('in!!');
-                        wrapper.cardAddress = newChannel.getText(); 
+                        wrapper.cardAddress = newChannel.getText() + ', '; 
                     }
                     if(newChannel.getName() == 'city'){
                         system.debug('in!!');
-                        wrapper.cardAddress += newChannel.getText(); 
+                        wrapper.cardAddress += newChannel.getText() + ', '; 
                     }
                     if(newChannel.getName() == 'state'){
                         system.debug('in!!');
-                        wrapper.cardAddress += newChannel.getText(); 
+                        wrapper.cardAddress += newChannel.getText() + ', '; 
                     }
                     if(newChannel.getName() == 'country'){
                         system.debug('in!!');
-                        wrapper.cardAddress += newChannel.getText(); 
+                        wrapper.cardAddress += newChannel.getText() + ', '; 
                     }
-                      if(newChannel.getName() == 'zip'){
+                    if(newChannel.getName() == 'zip'){
                         system.debug('in!!');
                         wrapper.cardAddress += newChannel.getText(); 
                     }
-                      if(newChannel.getName() == 'primary_ssn'){
+                    if(newChannel.getName() == 'primary_ssn'){
                         system.debug('in!!');
-                        wrapper.cardSSN += newChannel.getText(); 
+                        wrapper.cardSSN = newChannel.getText(); 
                     }
-                      if(newChannel.getName() == 'primary_birthdate'){
-                        system.debug('in!!');
-                        wrapper.cardDOB += newChannel.getText(); 
+                    if(newChannel.getName() == 'primary_birthdate'){
+                        Date dobDate = Date.newInstance(integer.valueof(newChannel.getText().right(4)), integer.valueof(newChannel.getText().left(2)), integer.valueof(newChannel.getText().substring(3,5)));     
+                        wrapper.cardDOB = dobDate; 
                     }
-                      if(newChannel.getName() == 'email_address'){
+                    if(newChannel.getName() == 'email_address'){
                         system.debug('in!!');
-                        wrapper.cardEmail += newChannel.getText(); 
+                        wrapper.cardEmail = newChannel.getText(); 
                     }
-                     if(newChannel.getName() == 'status'){
+                    if(newChannel.getName() == 'status'){
                         system.debug('in!!');
-                        wrapper.cardStatus += newChannel.getText(); 
+                        wrapper.cardStatus = newChannel.getText(); 
+                    }
+                    if(newChannel.getName() == 'account_num'){
+                        system.debug('in!!');
+                        wrapper.cardAccountNumber = newChannel.getText(); 
+                    }
+                    if(newChannel.getName() == 'expiration_date'){
+                        Date expDate = Date.newInstance(integer.valueof(newChannel.getText().right(4)), integer.valueof(newChannel.getText().left(2)), integer.valueof(newChannel.getText().substring(3,5)));
+                        wrapper.cardExpiringDate = expDate; 
+                    }
+                    if(newChannel.getName() == 'activation_date'){
+                        system.debug('22: ' + newChannel.getText());
+                        system.debug('22: ' + newChannel.getText().substring(6,10));
+                        String tester = newChannel.getText().substring(7,10);
+                        // Integer tester1 = newChannel.getText().substring(7,10);
+                        Integer tester2 = integer.valueOf(tester);
+                        system.debug(tester);
+                        system.debug(tester2);
+                        system.debug('22: ' + integer.valueof(newChannel.getText().substring(6,10)));
+                        Date actDate = Date.newInstance(integer.valueof(newChannel.getText().substring(6,10)), integer.valueof(newChannel.getText().left(2)), integer.valueof(newChannel.getText().substring(3,5)));     
+                        wrapper.accountActivationDate = actDate; 
+                    }
+                    if(newChannel.getName() == 'agent_num'){
+                        wrapper.agentNumber = newChannel.getText(); 
+                    }
+                    
+                    
+                    
+                    if(newChannel.getName() == 'program_id'){
+                        wrapper.programId = newChannel.getText(); 
+                    }
+                    
+                    
+                    
+                    if(newChannel.getName() == 'error_message'){
+                        // system.debug('in!!');
+                        //if('Invalid Card Number' == newChannel.getText()){
+                        wrapper.errorMessage = newChannel.getText(); 
+                        // } 
                     }
                 }
             }
         }
         
-       /* wrapper.cardFirstName = 'Test Name';
-        wrapper.cardDOB = '1/1/1900';
-        wrapper.cardSSN = '111-111-1111';
-        wrapper.cardEmail = 'test@test.com';
-        wrapper.cardAddress = '1111 Test Street, 11111';
-        wrapper.cardAgentName = 'Test Agent Name';
-      //  wrapper.cardBalance = '$1,000';
-        wrapper.cardStatus = 'Active'; */
         return wrapper; 
         
     }
     
-}
+    @auraEnabled
+    public static Boolean createCaseDb(String cardWrapperString){ 
+        Boolean isSuccess = true; 
+        CardFlowWrapper cardWrapper = (CardFlowWrapper) JSON.deserialize(cardWrapperString, CardFlowWrapper.class);
+        system.debug('wrapper complete: ' + cardWrapper);
+        Case cs = new Case(); 
+        cs.Agent__c  = cardWrapper.agentNumber;
+        //cs.Agent__c  = cardWrapper.accountActivationDate;
+        cs.Card_Number__c  = cardWrapper.enteredCardNumber;
+        cs.First_Name__c  = cardWrapper.cardFirstName;
+        cs.Last_Name__c   = cardWrapper.cardLastName;
+        cs.Date_of_Birth__c   = cardWrapper.cardDOB;
+        cs.Customer_Email__c = cardWrapper.cardEmail;
+        cs.Program__c = cardWrapper.programId.right(3);
+        //  cs.Service_Request__c = 'Customer information update';
+        
+        system.debug('cs1: ' + cs);
+        
+        
+        try{
+            insert cs;
+        } catch (exception e){
+            isSuccess = false; 
+            system.debug(e.getMessage());
+        } 
+        
+        system.debug('csId: ' + cs.Id);
+        
+        return isSuccess; 
+    }
+    
+    
+    @auraEnabled
+    public static void getCardInfoCore(String cardNumber, String holderName){ 
+        
+        String jsonResponseToken;
+        HttpRequest objReqToken = new HttpRequest();
+        HttpResponse objRespToken = new HttpResponse(); 
+        Http objHttpToken = new Http();
+        objReqToken.setEndpoint('https://core.rapidefund.com:9014/prepaidservices/secure/oauth/token?grant_type=password&username=ChatakPrepaidAdminUser&password=ChatakPrepaidAdminPass');
+        //objReq.setEndpoint('https://core.rapidefund.com:9014/GetCard?requestKey=CARD_NUMBER&requestValue=8WgVUE8hqqdFlxO/6Gtd+CXSEUKBnKH4enEMA8dlIGu8U4xDYc64GQTVpqHrVd0H');
+        
+        ///prepaidservices/rest/crm-external-services/getCustomer
+        objReqToken.setMethod('GET');
+        objReqToken.setHeader('Content-Type', 'application/json');   //'text/xml'
+        objReqToken.setHeader('Authorization', 'Basic Q2hhdGFrUHJlcGFpZEFkbWluQmFzaWNBdXRoOkNoYXRha0FkbWluQFNlY3VyZQ=='); 
+        
+        
+        objReqToken.setTimeout(120000);           
+        objRespToken = objHttpToken.send(objReqToken);     
+        String resBodyToken = objRespToken.getBody();//.replaceAll('Currency','CurrencyData'); 
+        system.debug('resBody: ' + resBodyToken);
+        ParseTokenJson n = ParseTokenJson.parse(resBodyToken);
+        system.debug('tester: ' + n.access_token);
+        
+        
+        String jsonResponse;
+        HttpRequest objReq = new HttpRequest();
+        HttpResponse objResp = new HttpResponse(); 
+        Http objHttp = new Http();
+        objReq.setEndpoint('https://core.rapidefund.com:9014/prepaidservices/rest/crm-external-services/getCustomer');
+        String jsonBody ='{"requestKey":"CARD_NUMBER","requestValue":"8WgVUE8hqqdFlxO/6Gtd+CXSEUKBnKH4enEMA8dlIGu8U4xDYc64GQTVpqHrVd0H"}';
+        
+        objReq.setBody(jsonBody);
+        HTTP auth = new HTTP(); 
+        objReq.setMethod('POST');
+        objReq.setHeader('Authorization', 'bearer ' + n.access_token);
+        objReq.setHeader('Content-Type', 'application/json');   //'text/xml'
+        objReq.setTimeout(120000);           
+        objResp = objHttp.send(objReq);
+        System.debug('$$$$' + objResp);      
+        String resBody = objResp.getBody(); 
+        system.debug('resBody: ' + resBody);
+        CoreResponseJSONConverter cardResponse = CoreResponseJSONConverter.parse(resBody);
+        CardFlowWrapper cardWrapper = new CardFlowWrapper();
+        cardWrapper.errorMessage = cardResponse.errorMessage;
+        cardWrapper.cardAccountNumber =  string.valueOf(cardResponse.customerAccounts[0].accountNumber);
+        cardWrapper.accountActivationDate = Date.newInstance(integer.valueof(cardResponse.customerAccounts[0].accountActivationDate.substring(6,10)), integer.valueof(cardResponse.customerAccounts[0].accountActivationDate.left(2)), integer.valueof(cardResponse.customerAccounts[0].accountActivationDate.substring(3,5)));     
+        cardWrapper.cardId =  string.valueOf(cardResponse.cards[0].cardId);   
+        cardWrapper.cardLastFourDigits =  cardResponse.cards[0].cardLastFourDigits ; 
+        cardWrapper.cardExpiringDate = Date.newInstance(integer.valueof(cardResponse.cards[0].cardExpirationDate.substring(6,10)), integer.valueof(cardResponse.cards[0].cardExpirationDate.left(2)), integer.valueof(cardResponse.cards[0].cardExpirationDate.substring(3,5)));  
+        system.debug('cardExpiringDate: ' + cardResponse.cards[0].cardExpirationDate);
+        cardWrapper.customerId =  string.valueOf(cardResponse.customerAccounts[0].customerId); 
+        cardWrapper.cardFirstName =  cardResponse.customer.firstName; 
+        cardWrapper.cardFirstName =  cardResponse.customer.lastName  ; 
+        cardWrapper.cardDOB = Date.newInstance(integer.valueof(cardResponse.cards[0].dateOfBirth.substring(6,10)), integer.valueof(cardResponse.cards[0].dateOfBirth.left(2)), integer.valueof(cardResponse.cards[0].dateOfBirth.substring(3,5)));  
+       system.debug('dateOfBirth: ' + cardResponse.cards[0].dateOfBirth);
+         system.debug('ssn: ' + cardResponse.customer.ssn);
+         system.debug('emailId: ' + cardResponse.customer.emailId);
+       // cardWrapper.cardSSN =  cardResponse.customer.ssn.toString(); 
+       // cardWrapper.cardEmail =  cardResponse.customer.emailId.toString()   ; 
+        cardWrapper.accountStatus =  cardResponse.customerAccounts[0].accountStatus; 
+        cardWrapper.cardAvailableBalance =  string.valueOf(cardResponse.customerAccounts[0].availableBalance); 
+        cardWrapper.cardCurrentBalance =  string.valueOf(cardResponse.customerAccounts[0].currentBalance)  ; 
+        cardWrapper.cardStatus =  cardResponse.cards[0].status  ; 
+        cardWrapper.address1 =  cardResponse.cards[0].address1  ; 
+        cardWrapper.address2 =  cardResponse.cards[0].address2  ; 
+        cardWrapper.city =  cardResponse.cards[0].city  ; 
+        cardWrapper.state =  cardResponse.cards[0].state  ; 
+        cardWrapper.country =  cardResponse.cards[0].country  ; 
+        cardWrapper.zip =  cardResponse.cards[0].zip  ;   
+        system.debug('cardWrapper: ' + cardWrapper);
+    }   
+}   
