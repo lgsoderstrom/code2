@@ -1,0 +1,462 @@
+<aura:component controller="cardCaseActionLightningController" implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId" access="global" >
+	
+<aura:attribute name="init" type="Boolean" default="false"/>
+    <aura:attribute name="case" type="Case"/>
+    <aura:attribute name="simpleCase" type="Case"/>
+    <aura:attribute name="caseError" type="String"/>
+    <aura:attribute name="errorMessage" type="String"/>
+    <aura:attribute name="spinner" type="Boolean" default="false"/>
+
+    <aura:attribute name="pinType" type="String"/>
+    <aura:attribute name="cardStatus" type="String"/>
+    <aura:attribute name="feeTransaction" type="String"/>
+    
+     <force:recordData aura:id="accountRecordLoader"
+        recordId="{!v.recordId}"
+        fields="Type,System_Type__c,Status"
+        targetRecord="{!v.simpleCase}"
+        targetFields="{!v.case}"
+        targetError="{!v.caseError}"
+    />
+
+    
+    <aura:handler name="init" action="{!c.init}" value="{!this}"/> 
+    
+  <!-- <aura:if isTrue="{!v.init}">  -->
+    <lightning:card iconName="utility:change_record_type" title="Case Actions">
+             <aura:if isTrue="{!v.spinner}">
+    <lightning:spinner alternativeText="Loading" size="medium"/>
+    </aura:if>
+        
+            <aura:if isTrue="{!v.case.Type == 'PIN Change'}">
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+                <lightning:layoutItem size="12">
+                <lightning:select name="pinType" value="{!v.pinType}" label="Pin Type" required="true" class='slds-m-right_medium slds-m-left_medium'>
+        <option value="">choose one...</option>
+        <option value="1">Auto Generate</option>
+        <option value="2">Last Four</option>
+    </lightning:select>
+                    </lightning:layoutItem>
+                 <lightning:layout horizontalAlign="center" class='slds-m-top_medium'> 
+                     <lightning:button variant='brand' label="PIN Change" disabled="{!empty(v.pinType)}" title="Neutral action" onclick="{!c.setPinChange}"/> 
+                </lightning:layout>
+            </aura:if>
+            <aura:if isTrue="{!v.case.Type == 'Account to Account Transfer'}">
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:button variant='brand' label="Account to Account Transfer" disabled="{!empty(v.boxes)}" title="Neutral action" onclick="{!c.accountTransfer}"/>
+            </aura:if>
+            <aura:if isTrue="{!v.case.Type == 'Card Info Update'}">
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:button variant='brand' label="Card Info Update" disabled="{!empty(v.boxes)}" title="Neutral action" onclick="{!c.infoUpdate}"/>
+            </aura:if>
+            <aura:if isTrue="{!v.case.Type == 'Card Status Change'}">
+                <lightning:layoutItem size="12">
+     <aura:if isTrue="{!v.case.System_Type__c == 'Core'}">
+      <lightning:select name="cardStatus" value="{!v.cardStatus}" label="Card Status" required="true" class='slds-m-right_medium slds-m-left_medium'>
+        <option value="">choose one...</option>
+        <option value="1">ACTIVE</option>
+        <option value="2">BLOCK</option>
+        <option value="1">INACTIVE</option>
+        <option value="2">LOST</option>
+        <option value="1">DAMAGED</option>
+        <option value="2">BAD</option>
+        <option value="1">DESTROYED</option>
+        <option value="2">CLOSE</option>
+    </lightning:select>
+                                    </aura:if>
+                <aura:if isTrue="{!v.case.System_Type__c == 'Legacy'}">
+                <lightning:select name="cardStatus" value="{!v.cardStatus}" label="Card Status" required="true" class='slds-m-right_medium slds-m-left_medium'>
+        <option value="">choose one...</option>
+        <option value="1">Active</option>
+        <option value="2">Lost</option>
+        <option value="1">Block</option>
+        <option value="2">Stolen</option>
+        <option value="1">Onhold</option>
+        <option value="2">HOTLIST</option>
+        <option value="1">Damaged</option>
+        <option value="2">Suspended</option>
+        <option value="1">Terminated</option>
+        <option value="2">Suspected/Fraud</option>
+    </lightning:select>
+                    </aura:if>
+                    </lightning:layoutItem>
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+             <lightning:layout horizontalAlign="center" class='slds-m-top_medium'> 
+                <lightning:button variant='brand' label="Card Status Change" disabled="{!empty(v.cardStatus)}" title="Neutral action" onclick="{!c.statusChange}"/>
+                </lightning:layout>
+            </aura:if>
+            <aura:if isTrue="{!v.case.Type == 'Fee Reversal'}">
+            <lightning:layoutItem class='slds-m-right_medium slds-m-left_medium'>
+                  <lightning:input type="integer" name="input1" label="Transaction Number" value="{!v.feeTransaction}" />
+                    </lightning:layoutItem>
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:layout horizontalAlign="center" class='slds-m-top_medium'> 
+                <lightning:button variant='brand' label="Fee Reversal" disabled="{!empty(v.feeTransaction)}" title="Neutral action" onclick="{!c.setFeeReversal}"/>
+                </lightning:layout>
+            </aura:if>
+                        <aura:if isTrue="{!v.case.Type == 'Replacement Card'}">
+          <!--  <lightning:button variant='Neutral' label="Return to Order" title="Neutral action" onclick="{! c.handleClick }"/> -->
+            <lightning:button variant='brand' label="Replacement Card" disabled="{!empty(v.boxes)}" title="Neutral action" onclick="{!c.replacementCard}"/>
+            </aura:if>
+        <aura:if isTrue="{!!v.errorMessage==''}">
+        <h1> Result: {!v.errorMessage}</h1>
+            </aura:if>
+    </lightning:card>
+  <!--   </aura:if>    -->
+
+</aura:component>
+
+
+
+
+
+({
+	init: function(component, event, helper) {
+        console.log('22: ' + component.get('v.recordId'));
+        console.log('23: ' + component.get('v.case'));
+        console.log('24: ' + component.get('v.simpleCase'));
+        var action = component.get("c.getCase");
+        action.setParam('caseRecordId', component.get('v.recordId'));
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {      
+                component.set("v.case",response.getReturnValue());
+                component.set("v.init",true);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);  
+    },
+    setPinChange: function(component, event, helper) {
+        console.log('15'); 
+        console.log('13: ' + component.get('v.pinType'));
+        console.log('22: ' + component.get('v.pinType'));
+        console.log('22: ' + JSON.stringify(component.get('v.simpleCase')));
+        console.log('28: ' + JSON.stringify(component.get('v.case')));
+        component.set("v.spinner", true);
+        
+        var action = component.get("c.pinChange"); 
+        action.setParams({'caseRecord': JSON.stringify(component.get('v.case')),'selectedPinType':component.get('v.pinType')});
+        console.log(action);  
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") { 
+                console.log('45: ' + response.getReturnValue());
+                component.set("v.errorMessage",response.getReturnValue());
+                component.set("v.spinner", false);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+    },
+    accountTransfer: function(component, event, helper) {
+        console.log('22: ' + component.get('v.recordId'));
+        var action = component.get("c.getCase");
+        action.setParam('caseRecordId', component.get('v.recordId'));
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {      
+                component.set("v.case",response.getReturnValue());
+                component.set("v.init",true);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+    },
+    infoUpdate: function(component, event, helper) {
+        console.log('22: ' + component.get('v.recordId'));
+        var action = component.get("c.getCase");
+        action.setParam('caseRecordId', component.get('v.recordId'));
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {      
+                component.set("v.case",response.getReturnValue());
+                component.set("v.init",true);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+    },
+    statusChange: function(component, event, helper) {
+        console.log('22: ' + component.get('v.recordId'));
+        var action = component.get("c.getCase");
+        action.setParam('caseRecordId', component.get('v.recordId'));
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {      
+                component.set("v.case",response.getReturnValue());
+                component.set("v.init",true);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+    },
+    setFeeReversal: function(component, event, helper) {
+        component.set("v.spinner", true);
+        console.log('22: ' + component.get('v.recordId'));
+        console.log('23: ' + component.get('v.case.System_Type__c'));
+        console.log('24: ' + component.get('v.feeTransaction'));
+        var action = component.get("c.parseFeeReversal");
+        action.setParams({'caseRecord': JSON.stringify(component.get('v.case')),'reversalTrans':component.get('v.pinType')});
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {      
+                component.set("v.case",response.getReturnValue());
+                component.set("v.init",true);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);  
+    },
+    replacementCard: function(component, event, helper) {
+        console.log('22: ' + component.get('v.recordId'));
+        var action = component.get("c.getCase");
+        action.setParam('caseRecordId', component.get('v.recordId'));
+        console.log(action); 
+        action.setCallback(this, function(response){
+            var state = response.getState();
+            if (component.isValid() && state === "SUCCESS") {      
+                component.set("v.case",response.getReturnValue());
+                component.set("v.init",true);
+            }
+            else { 
+                console.log("Failed with state: " + state);
+            }
+        });
+        $A.enqueueAction(action);   
+    }
+})
+
+
+public class cardCaseActionLightningController {
+    
+    @auraEnabled
+    public static case getCase(String caseRecordId){
+        
+        list <Case> thisCase = [Select Type, System_Type__c, Customer_Email__c, PIN_Type__c, Encrypted_Card__c, Reason__c, Txn_Number__c,
+                                 From_Account_Number__c ,To_Account_Number__c, To_Amount_Balance__c, Old_Card_Status__c 
+                           FROM Case
+                           WHERE Id = :caseRecordId];
+        
+        return thisCase[0];
+    }
+    
+        @auraEnabled
+    public static String pinChange(string caseRecord,String selectedPinType){   //
+        String errorMessage = 'Success'; 
+        system.debug('22: ' + caseRecord);
+        system.debug('22: ' + selectedPinType); 
+        Case cs = (Case)JSON.deserialize(caseRecord, Case.class);
+        system.debug('23: ' + cs);
+      /*  if(cs.System_Type__c == 'Core'){ 
+        Set_PinChangeLightning.resetPinCore(cs,selectedPinType); 
+        } else if (cs.System_Type__c == 'Legacy') { 
+        Set_PinChangeLightning.resetPinLegacy(cs,selectedPinType);
+        } */
+        system.debug('errorMessage: ' + errorMessage);
+        return errorMessage; 
+    }
+    
+      @auraEnabled
+    public static String parseFeeReversal(string caseRecord,String reversalTrans){
+        String errorMessage = 'Success'; 
+        system.debug('22: ' + caseRecord);
+        system.debug('22: ' + reversalTrans); 
+        Case cs = (Case)JSON.deserialize(caseRecord, Case.class);
+        system.debug('23: ' + cs);
+      /*  if(cs.System_Type__c == 'Core'){ 
+        Set_FeeReversalLightning.feeReversalCore(cs,reversalTrans); 
+        } else if (cs.System_Type__c == 'Legacy') { 
+        Set_FeeReversalLightning.feeReversalLegacy(cs,reversalTrans);
+        } */
+        system.debug('errorMessage: ' + errorMessage);
+        return errorMessage;
+    }
+    
+      @auraEnabled
+    public static void Set_AccountToAccountTransfer(String customerId,String fromAccountNumber,String toAccountNumber,String amount,String reason){
+        
+       // Set_PinChangeAPI.Set_AccountToAccountTransfer(customerId,fromAccountNumber,toAccountNumber,amount,reason);
+    }
+    
+      @auraEnabled
+    public static void parseChangeCardStatus(String customerId,String cardStatus,String cardNumber,String reason,String updateCardandAccount){
+        
+       // Set_PinChangeAPI.parseChangeCardStatus(customerId,cardStatus,cardNumber,reason,reasonupdateCardandAccount
+    }
+    
+      @auraEnabled
+    public static void parseLegacyCustomerInfoUpdate (String cardNumber,String firstName,String lastName,String dateOfBirth,String email,
+                                                     String ssn,String address,String city,String state,String zip,String country,
+                                                     String username,String homePhone,String businessPhone,String mobilePhone,String reason){
+        
+       // Set_LegacyCustomerInfoUpdate.parseLegacyCustomerInfoUpdate(cardNumber,firstName,lastName,dateOfBirth,email,ssn,address,city,state,zip,
+       // country,username,homePhone,businessPhone,mobilePhone,reason);
+    }
+
+}
+
+
+public class Set_FeeReversalLightning {
+    
+    public static void feeReversalCore(Case caseRecord, String feeTrans){
+         String jsonResponseToken;
+        HttpRequest objReqToken = new HttpRequest();
+        HttpResponse objRespToken = new HttpResponse(); 
+        Http objHttpToken = new Http();
+        objReqToken.setEndpoint('https://core.rapidefund.com:9014/prepaidservices/secure/oauth/token?grant_type=password&username=ChatakPrepaidAdminUser&password=ChatakPrepaidAdminPass');
+        //objReq.setEndpoint('https://core.rapidefund.com:9014/GetCard?requestKey=CARD_NUMBER&requestValue=8WgVUE8hqqdFlxO/6Gtd+CXSEUKBnKH4enEMA8dlIGu8U4xDYc64GQTVpqHrVd0H');
+        
+        ///prepaidservices/rest/crm-external-services/getCustomer
+        objReqToken.setMethod('POST');
+        objReqToken.setHeader('Content-Type', 'application/json');   //'text/xml'
+        objReqToken.setHeader('Authorization', 'Basic Q2hhdGFrUHJlcGFpZEFkbWluQmFzaWNBdXRoOkNoYXRha0FkbWluQFNlY3VyZQ=='); 
+        
+        
+        objReqToken.setTimeout(120000);           
+        objRespToken = objHttpToken.send(objReqToken);     
+        String resBodyToken = objRespToken.getBody();//.replaceAll('Currency','CurrencyData'); 
+        system.debug('resBody: ' + resBodyToken);
+        ParseTokenJson n = ParseTokenJson.parse(resBodyToken);
+        system.debug('tester: ' + n.access_token);
+       
+        
+        String jsonResponse;
+        HttpRequest objReq = new HttpRequest();
+        HttpResponse objResp = new HttpResponse(); 
+        Http objHttp = new Http();
+        objReq.setEndpoint('https://core.rapidefund.com:9014/prepaidservices/rest/crm-external-services/getPinChangeRequest');
+        String jsonBody ='{"customerId":"","pinType":"LAST_4_DIGITS","cardNumber":"","emailAddres":"","reason":"Support in Salesforce"}';    //"8WgVUE8hqqdFlxO/6Gtd+CXSEUKBnKH4enEMA8dlIGu8U4xDYc64GQTVpqHrVd0H"
+        
+        objReq.setBody(jsonBody);
+        HTTP auth = new HTTP(); 
+        objReq.setMethod('POST');
+        objReq.setHeader('Authorization', 'bearer ' + n.access_token);
+        objReq.setHeader('Content-Type', 'application/json');   //'text/xml'
+        objReq.setTimeout(120000);           
+        objResp = objHttp.send(objReq);
+        System.debug('$$$$' + objResp);      
+        String resBody = objResp.getBody(); 
+        system.debug('resBody: ' + resBody);
+    }
+    
+    public static void feeReversalLegacy(Case caseRecord, String feeTrans){ 
+    
+     String jsonResponse;
+        HttpRequest objReq = new HttpRequest();
+        HttpResponse objResp = new HttpResponse(); 
+        Http objHttp = new Http();
+        objReq.setEndpoint('https://rapidefund.com/MPGateway/IAG');
+        objReq.setBody('<!DOCTYPE pip SYSTEM "https://www.rapidefund.com/MPGateway/dtd/mycropod_rq_1_0.dtd">'
+                       + '<pip>' 
+                       + '<client_id>GFGD84KJBAPDMZKSTDG36612107DHFHE3PRFDSEB</client_id>' 
+                       + '<pin_change_request>' 
+                       + '<pin_type>last_four</pin_type>' 
+                       + '<card_number>Nqe5</card_number>' 
+                       + '<email_address>lgsoderstrom@gmail.com</email_address>' 
+                       + '<reason>Support in Salesforce</reason>' 
+                       + '</pin_change_request>' 
+                       + '</pip>');
+        
+        
+        objReq.setMethod('POST');
+        objReq.setHeader('Content-Type', 'text/xml');   
+        objReq.setTimeout(120000);           
+        objResp = objHttp.send(objReq);  
+        String resBody = objResp.getBody();//.replaceAll('Currency','CurrencyData'); 
+        Dom.Document doc = objResp.getBodyDocument(); 
+        Dom.XMLNode rss = doc.getRootElement();
+    }
+
+}
+
+public class Set_PinChangeLightning {
+    
+    public static void resetPinCore(Case caseRecord, String pinType){
+        
+          String jsonResponseToken;
+        HttpRequest objReqToken = new HttpRequest();
+        HttpResponse objRespToken = new HttpResponse(); 
+        Http objHttpToken = new Http();
+        objReqToken.setEndpoint('https://core.rapidefund.com:9014/prepaidservices/secure/oauth/token?grant_type=password&username=ChatakPrepaidAdminUser&password=ChatakPrepaidAdminPass');
+        //objReq.setEndpoint('https://core.rapidefund.com:9014/GetCard?requestKey=CARD_NUMBER&requestValue=8WgVUE8hqqdFlxO/6Gtd+CXSEUKBnKH4enEMA8dlIGu8U4xDYc64GQTVpqHrVd0H');
+        
+        ///prepaidservices/rest/crm-external-services/getCustomer
+        objReqToken.setMethod('POST');
+        objReqToken.setHeader('Content-Type', 'application/json');   //'text/xml'
+        objReqToken.setHeader('Authorization', 'Basic Q2hhdGFrUHJlcGFpZEFkbWluQmFzaWNBdXRoOkNoYXRha0FkbWluQFNlY3VyZQ=='); 
+        
+        
+        objReqToken.setTimeout(120000);           
+        objRespToken = objHttpToken.send(objReqToken);     
+        String resBodyToken = objRespToken.getBody();//.replaceAll('Currency','CurrencyData'); 
+        system.debug('resBody: ' + resBodyToken);
+        ParseTokenJson n = ParseTokenJson.parse(resBodyToken);
+        system.debug('tester: ' + n.access_token);
+       
+        
+        String jsonResponse;
+        HttpRequest objReq = new HttpRequest();
+        HttpResponse objResp = new HttpResponse(); 
+        Http objHttp = new Http();
+        objReq.setEndpoint('https://core.rapidefund.com:9014/prepaidservices/rest/crm-external-services/getPinChangeRequest');
+        String jsonBody ='{"customerId":"","pinType":"LAST_4_DIGITS","cardNumber":"","emailAddres":"","reason":"Support in Salesforce"}';    //"8WgVUE8hqqdFlxO/6Gtd+CXSEUKBnKH4enEMA8dlIGu8U4xDYc64GQTVpqHrVd0H"
+        
+        objReq.setBody(jsonBody);
+        HTTP auth = new HTTP(); 
+        objReq.setMethod('POST');
+        objReq.setHeader('Authorization', 'bearer ' + n.access_token);
+        objReq.setHeader('Content-Type', 'application/json');   //'text/xml'
+        objReq.setTimeout(120000);           
+        objResp = objHttp.send(objReq);
+        System.debug('$$$$' + objResp);      
+        String resBody = objResp.getBody(); 
+        system.debug('resBody: ' + resBody);
+    }
+    
+    public static void resetPinLegacy(Case caseRecord, String pinType){ 
+    
+     String jsonResponse;
+        HttpRequest objReq = new HttpRequest();
+        HttpResponse objResp = new HttpResponse(); 
+        Http objHttp = new Http();
+        objReq.setEndpoint('https://rapidefund.com/MPGateway/IAG');
+        objReq.setBody('<!DOCTYPE pip SYSTEM "https://www.rapidefund.com/MPGateway/dtd/mycropod_rq_1_0.dtd">'
+                       + '<pip>' 
+                       + '<client_id>GFGD84KJBAPDMZKSTDG36612107DHFHE3PRFDSEB</client_id>' 
+                       + '<pin_change_request>' 
+                       + '<pin_type>last_four</pin_type>' 
+                       + '<card_number>Nqe5</card_number>' 
+                       + '<email_address>lgsoderstrom@gmail.com</email_address>' 
+                       + '<reason>Support in Salesforce</reason>' 
+                       + '</pin_change_request>' 
+                       + '</pip>');
+        
+        
+        objReq.setMethod('POST');
+        objReq.setHeader('Content-Type', 'text/xml');   
+        objReq.setTimeout(120000);           
+        objResp = objHttp.send(objReq);  
+        String resBody = objResp.getBody();//.replaceAll('Currency','CurrencyData'); 
+        Dom.Document doc = objResp.getBodyDocument(); 
+        Dom.XMLNode rss = doc.getRootElement();
+    }
+
+}
