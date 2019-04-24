@@ -8,6 +8,7 @@
         console.log('tester commit!');
         console.log('tester commit!');
         console.log('tester commit!');
+        console.log('tester 3412421423!');
         console.log(action);
         action.setCallback(this, function(response){
             var state = response.getState();
