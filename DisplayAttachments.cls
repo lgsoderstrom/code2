@@ -4,6 +4,7 @@
         action.setParams({
             "bidId" : component.get("v.recordId")
         });
+        console.log('tester commit feature!');
         console.log('tester commit!');
         console.log('tester commit!');
         console.log('tester commit!');
