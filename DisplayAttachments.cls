@@ -5,6 +5,8 @@
             "bidId" : component.get("v.recordId")
         });
         console.log('tester commit!');
+        console.log('tester commit!');
+        console.log('tester commit!');
         console.log(action);
         action.setCallback(this, function(response){
             var state = response.getState();
